@@ -1,10 +1,8 @@
 import { Request, Response } from 'express';
-import Stripe from 'stripe';
 import { makeUserSubscribed, makeUserUnsubscribed, getAccountInfo } from '../db/dbInteractions/dbAccount';
-import { createCustomer, createSubscription, verifyStripeSignature} from '../services/stripeService';
+import { createCustomer, createSubscription, verifyStripeSignature, cancelSubscription} from '../services/stripeService';
 import { addPaymentIntentRecord, updatePaymentIntentRecord, getPaymentIntentRecord, getPaymentIntentRecordBySubscriptionId, getPaymentIntentRecordByUserId } from '../db/dbInteractions/dbPayments';
 
-const stripe = new Stripe(process.env.STRIPE_KEY as string)
 
 class PaymentController {
   constructor() {
@@ -43,9 +41,7 @@ class PaymentController {
       return res.status(404).json({ error: 'User wasnt subscribed' });
     }
     const subscriptionId = prevInfo[0].subscriptionId;
-    const deletedSubscription = await stripe.subscriptions.cancel(
-      subscriptionId
-    );
+    const deletedSubscription = await cancelSubscription(subscriptionId);
     res.send(deletedSubscription);
   }
 

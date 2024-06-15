@@ -25,6 +25,10 @@ export async function createSubscription(userId: number, customerId: string, pri
     });
 }
 
+export async function cancelSubscription(subscriptionId: string) {
+    return await stripe.subscriptions.cancel(subscriptionId);
+}
+
 export async function retieveInvoice(invoiceId: string) {
     return await stripe.invoices.retrieve(invoiceId, {
         expand: ['payment_intent']
