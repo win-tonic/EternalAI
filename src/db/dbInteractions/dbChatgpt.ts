@@ -56,5 +56,8 @@ export async function createChat(userId: number, actLike: string): Promise<ChatT
 
 export async function saveMessages(chatId: number, messages: ChatgptMessage[]): Promise<void> {
     const insertArray = messages.map(message => ({ chatId, role: message.role, message: message.content }))
+    if (insertArray.length === 0) {
+        return;
+    }
     await db.db.insert(db.chatHistory).values(insertArray)
 }
