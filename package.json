@@ -1,4 +1,9 @@
 {
+	"scripts": {
+		"generate-migration": "drizzle-kit generate:pg --config=./src/db/",
+		"build": "npm install && tsc",
+		"start": "node dist/server.js"
+	},
 	"dependencies": {
 		"bcrypt": "^5.1.1",
 		"body-parser": "^1.20.2",
