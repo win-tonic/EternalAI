@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { makeUserSubscribed, makeUserUnsubscribed, getAccountInfo } from '../db/dbInteractions/dbAccount';
-import { createCustomer, createSubscription, verifyStripeSignature, cancelSubscription} from '../services/stripeService';
+import { createCustomer, createSubscription, verifyStripeSignature, cancelSubscription, retrieveSubscription, retrieveSetupIntent, setupCheckoutSession, updateSubscriptionPaymentMethod } from '../services/stripeService';
 import { addPaymentIntentRecord, updatePaymentIntentRecord, getPaymentIntentRecord, getPaymentIntentRecordBySubscriptionId, getPaymentIntentRecordByUserId } from '../db/dbInteractions/dbPayments';
 
 
@@ -8,6 +8,8 @@ class PaymentController {
   constructor() {
     this.createPaymentIntent = this.createPaymentIntent.bind(this);
     this.webhook = this.webhook.bind(this);
+    this.getPaymentIntentStatus = this.getPaymentIntentStatus.bind(this);
+    this.cancelSubscription = this.cancelSubscription.bind(this);
   }
 
   public async createPaymentIntent(req: Request, res: Response) {
@@ -45,6 +47,19 @@ class PaymentController {
     res.send(deletedSubscription);
   }
 
+  public async changePaymentMethod(req: Request, res: Response) {
+    const userId = res.locals.tokenInfo.id;
+    const prevInfo = await getPaymentIntentRecordByUserId(userId);
+    if (!prevInfo || !prevInfo[0]) {
+      return res.status(404).json({ error: 'User wasnt subscribed' });
+    }
+    const subscriptionId = prevInfo[0].subscriptionId;
+    const subscription = await retrieveSubscription(subscriptionId);
+    const customerId = subscription.customer as string;
+    const session = await setupCheckoutSession(customerId, subscriptionId);
+    res.status(200).json({ sessionId: session.id })
+  }
+
   public async webhook(req: Request, res: Response) {
     const sig = req.headers['stripe-signature'] as string;
 
@@ -57,7 +72,7 @@ class PaymentController {
       } else if (event.type === 'invoice.payment_failed') {
         const paymentIntentId = event.data.object.payment_intent as string;
         await updatePaymentIntentRecord(paymentIntentId, 'FAILED');
-      } else if (event.type === 'invoice.finalized'){
+      } else if (event.type === 'invoice.finalized') {
         const paymentIntentId = event.data.object.payment_intent as string;
         const subscriptionId = event.data.object.subscription as string;
         const prevInfo = await getPaymentIntentRecord(paymentIntentId);
@@ -69,6 +84,14 @@ class PaymentController {
         const prevInfo = await getPaymentIntentRecordBySubscriptionId(subscriptionId);
         if (prevInfo.length > 0) {
           await makeUserUnsubscribed(prevInfo[0].userId);
+        }
+      } else if (event.type === 'checkout.session.completed') {
+        const setupIntentId = event.data.object.setup_intent;
+        if (typeof setupIntentId === 'string') {
+          const setupIntent = await retrieveSetupIntent(setupIntentId);
+          if (setupIntent.metadata && setupIntent.metadata.subscription_id && setupIntent.payment_method) {
+            await updateSubscriptionPaymentMethod(setupIntent.metadata.subscription_id, setupIntent.payment_method as string);
+          }
         }
       }
       res.status(200).json({ received: true });

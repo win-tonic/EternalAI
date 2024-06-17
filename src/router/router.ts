@@ -23,6 +23,8 @@ router.post('/sendMessage', errorMiddleware(needsToken(chatController.sendMessag
 
 router.post('/subscribe', errorMiddleware(needsToken(paymentController.createPaymentIntent)));
 router.post('/unsubscribe', errorMiddleware(needsToken(paymentController.cancelSubscription)));
+router.get('/paymentStatus', errorMiddleware(needsToken(paymentController.getPaymentIntentStatus)));
+router.post('/changePaymentMethod', errorMiddleware(needsToken(paymentController.changePaymentMethod)));
 router.post('/stripe/webhook', errorMiddleware(paymentController.webhook));
 
 export { router };

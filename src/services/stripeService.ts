@@ -20,7 +20,7 @@ export async function createSubscription(userId: number, customerId: string, pri
         collection_method: 'charge_automatically',
         metadata: { userId },
         payment_behavior: 'default_incomplete',
-        payment_settings: {save_default_payment_method: 'on_subscription'},
+        payment_settings: { save_default_payment_method: 'on_subscription' },
         expand: ['latest_invoice.payment_intent']
     });
 }
@@ -33,6 +33,37 @@ export async function retieveInvoice(invoiceId: string) {
     return await stripe.invoices.retrieve(invoiceId, {
         expand: ['payment_intent']
     });
+}
+
+export async function retrieveSubscription(subscriptionId: string) {
+    return await stripe.subscriptions.retrieve(subscriptionId);
+}
+
+export async function retrieveSetupIntent(setupIntentId: string) {
+    return await stripe.setupIntents.retrieve(setupIntentId);
+}
+
+export async function updateSubscriptionPaymentMethod(subscriptionId: string, paymentMethodId: string) {
+    return await stripe.subscriptions.update(subscriptionId, {
+        default_payment_method: paymentMethodId
+    });
+}
+
+export async function setupCheckoutSession(customerId: string, subscriptionId: string) {
+    const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        mode: 'setup',
+        customer: customerId,
+        setup_intent_data: {
+            metadata: {
+                customer_id: customerId,
+                subscription_id: subscriptionId,
+            },
+        },
+        success_url: 'https://example.com/success?session_id={CHECKOUT_SESSION_ID}',
+        cancel_url: 'https://example.com/cancel',
+    });
+    return session;
 }
 
 export function verifyStripeSignature(payload: Buffer, sig: string | undefined): Stripe.Event {
@@ -64,7 +95,7 @@ export async function handleStripeWebhook(event: Stripe.Event) {
             throw new Error('Missing metadata in Stripe session');
         }
 
-         return {
+        return {
             success: event.type === 'payment_intent.succeeded' ? 1 : 0,
             metadata: intent.metadata,
             clientSecret: intent.client_secret,
@@ -72,5 +103,5 @@ export async function handleStripeWebhook(event: Stripe.Event) {
         };
     }
 
-    return {success: null, event};
+    return { success: null, event };
 }

@@ -1,0 +1,182 @@
+# Eternal AI API Documentation
+
+## Overview
+
+The Eternal AI API provides endpoints for user authentication, account management, chat functionalities, and payment processing using Stripe.
+Base URL: https://eternalai-jbed.onrender.com
+
+## Endpoints
+
+### Authentication
+
+**POST /signup**  
+Headers: None  
+Body:
+{
+  "email": string,
+  "password": string
+}
+
+**POST /signin**  
+Headers: None  
+Body:
+{
+  "email": string,
+  "password": string
+}
+Output:
+{
+  "token": string
+}
+
+**POST /googleAuth**  
+Headers: None  
+Body:
+{
+  "token": string
+}
+Output:
+{
+  "token": string
+}
+
+### Account Management
+
+**GET /accountInfo**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body: None
+Output:
+{
+  "id": number,
+  "email": string,
+  "name": string,
+  "phoneNumber": string,
+  "subscribed": boolean
+}
+
+**POST /changeAccountInfo**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body:
+{
+  "email"?: string,
+  "name"?: string,
+  "phoneNumber"?: string
+}
+
+**POST /changePassword**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body:
+{
+  "password": string
+}
+
+**POST /socialMediaShared**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body:
+{
+  "action": string
+}
+
+### Chat
+
+**POST /newChat**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body:
+{
+  "actLike": string
+}
+Output:
+{
+  "chatId": number,
+  "userId": number,
+  "actLike": string,
+  "messageHistory": {role: string, message: string}[]
+}
+
+**GET /chatInfo?chatId=string**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body: None
+Output:
+{
+  "chatId": number,
+  "userId": number,
+  "actLike": string,
+  "messageHistory": {role: string, message: string}[]
+}
+
+**POST /sendMessage**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body:
+{
+  "chatId": number,
+  "message": string
+}
+Output:
+{
+  "message": string
+}
+
+### Payments
+
+**POST /subscribe**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body: None
+Output:
+{
+  "subscriptionId": string,
+  "client_secret": string
+}
+
+**POST /unsubscribe**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body: None
+
+**GET /paymentStatus?subscriptionId=string**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body: None
+Output:
+{
+  "paymentStatus": string
+}
+
+
+**POST /changePaymentMethod**  
+Headers: 
+{
+  "Authorization": "Bearer jwt_token"
+}
+Body: None
+Output:
+{
+  "sessionId": string
+}
